@@ -1,0 +1,42 @@
+# Workflow untuk jalankan Terraform secara otomatis
+# saat ada perubahan file .tf yang masuk ke master
+name: Terraform Apply
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '*.tf'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      # Install Terraform CLI di runner GitHub,
+      # karena tidak tersedia di Termux
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Download provider yang dibutuhkan (provider GitHub)
+      - name: Terraform Init
+        run: terraform init
+
+      # Tampilkan rencana perubahan sebelum eksekusi
+      - name: Terraform Plan
+        run: terraform plan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Eksekusi perubahan sungguhan ke resource GitHub
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
